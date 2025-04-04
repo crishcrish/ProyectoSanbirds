@@ -31,5 +31,3 @@ class ConexionPostgres:
         except Exception as ex:
             print(f"❌ Error al ejecutar consulta: {ex}")
             return None
-
-
