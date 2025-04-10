@@ -1,102 +1,108 @@
 import os
-import sys
-import tkinter as tk
-from tkinter import ttk
+import customtkinter as ctk
+from PIL import Image
 from backend.database import ConexionPostgres as psql
-from PIL import Image, ImageTk
+import tkinter.ttk as ttk
 
 rutaImagenLogoSanbirds = os.path.abspath("frontend/assets/LOGOSANBIRDSDB.png")
 
-
-class Interfaz(tk.Frame):
-    def __init__(self, master=None, db = None): # Iniciar, pidiendo el master y la base de datos
-        super().__init__(master, width=1200, height=700) # Tamaño de la pestaña
+class Interfaz(ctk.CTkFrame):
+    def __init__(self, master=None, db=None):
+        super().__init__(master)
         self.master = master
         self.db = db
-        self.master.protocol("WM_DELETE_WINDOW", self.cerrar_aplicacion) # Protocolo para cerrar la app
-        self.pack(expand=True, fill="both") # Hace que el frame principal ocupe toda la ventana
-        self.frame_superior() # Pone el frame superior
-        self.area_resultados() # Pone el area de resultados
-        
-    def frame_superior(self):   # Contenedor con la imagen y el botón
+        self.pack(expand=True, fill="both")
+        self.master.title("SanbirdsDB")
+        self.master.geometry("1200x700")
+        self.master.protocol("WM_DELETE_WINDOW", self.cerrar_aplicacion)
 
-        self.frame_superior = tk.Frame(self, bg="blue", height=100) # Creación del frame
-        self.frame_superior.pack(fill="x")
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("blue")
 
-        # Creación de un contenedor dentro del frame superior
-        contenedor = tk.Frame(self.frame_superior, bg = "blue") 
-        contenedor.pack(pady=20, side="left")
+        self.tabla_seleccionada = "cliente"
+        self.frame_superior()
+        self.area_resultados()
 
-        # Abrir y redimensión de la imagen
-        logoSanbirdsOriginal = Image.open(rutaImagenLogoSanbirds)
-        ancho_original, alto_original = logoSanbirdsOriginal.size
-        logoSanbirdsRedimensionado = logoSanbirdsOriginal.resize((int(ancho_original*0.2), int(alto_original*0.2)))
-        self.logoSanbirdsImagen = ImageTk.PhotoImage(logoSanbirdsRedimensionado)
-        
-        # Poner imagen en un label
-        logoSanbirdsLabel = tk.Label(contenedor, image=self.logoSanbirdsImagen)
-        logoSanbirdsLabel.pack(side="left", padx=10)
+    def crear_tabla(self, columnas):
+        # Limpiar frame anterior
+        for widget in self.frame_tabla.winfo_children():
+            widget.destroy()
 
-        # Botón con la función buscar
-        boton_buscar = tk.Button(contenedor, text="Buscar datos", command=self.buscar_datos)
-        boton_buscar.pack(side="left", padx=10)  
+        self.tree = ttk.Treeview(self.frame_tabla, columns=columnas, show="headings")
+
+        for col in columnas:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, anchor="center")
+
+        self.tree.pack(expand=True, fill="both", side="left")
+
+        # Scrollbar
+        vsb = ttk.Scrollbar(self.frame_tabla, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscrollcommand=vsb.set)
+        vsb.pack(side="right", fill="y")
+
+    def insertar_datos(self, datos):
+        for fila in datos:
+            self.tree.insert("", "end", values=fila)
+
+    def frame_superior(self):
+        frame_top = ctk.CTkFrame(self, height=100)
+        frame_top.pack(fill="x", padx=10, pady=(10, 0))
+
+        contenedor = ctk.CTkFrame(frame_top, fg_color="transparent")
+        contenedor.pack(pady=15, padx=20, side="left")
+
+        logo = ctk.CTkImage(Image.open(rutaImagenLogoSanbirds), size=(100, 60))
+        logo_label = ctk.CTkLabel(contenedor, image=logo, text="")
+        logo_label.pack(side="left", padx=10)
+
+        boton_buscar = ctk.CTkButton(contenedor, text="Buscar datos", command=self.buscar_datos)
+        boton_buscar.pack(side="left", padx=10)
 
     def area_resultados(self):
-        self.frame_inferior = tk.Frame(self)
-        self.frame_inferior.pack(expand=True, fill="both", padx=20, pady=10)
+        frame_body = ctk.CTkFrame(self)
+        frame_body.pack(expand=True, fill="both", padx=20, pady=10)
 
-        #Creación y encapsulación de frames
-        frame_texto = tk.Frame(self.frame_inferior)
-        frame_menu = tk.Frame(self.frame_inferior)
+        # Menú lateral
+        frame_menu = ctk.CTkFrame(frame_body, width=200)
+        frame_menu.pack(side="left", fill="y", padx=(0, 10), pady=10)
 
-        # Pack de Frames
-        frame_menu.pack(padx=20, pady=20, side="left", fill="y")
-        frame_texto.pack(expand=True, fill="both", padx=20, pady=20, side="left")
+        tablas = ["cliente", "envio", "detalles_envio", "productos", "proveedor"]
+        for tabla in tablas:
+            ctk.CTkButton(
+                frame_menu,
+                text=tabla.capitalize().replace("_", " "),
+                width=160,
+                corner_radius=10,
+                command=lambda t=tabla: self.seleccionar_tabla(t)
+            ).pack(pady=5, padx=10)
 
-        # Menú
-        frasePrueba = tk.Label(frame_menu, text="hola")
-        frasePrueba.pack()
+        # Área para la tabla
+        self.frame_tabla = ctk.CTkFrame(frame_body)
+        self.frame_tabla.pack(expand=True, fill="both", pady=10)
 
-        # Tabla de datos
-        self.vista_datos = ttk.Treeview(frame_texto, columns=("col1","col2"))
-        
-        # Creación de columnas
-            # Creación de columnas centradas
-        self.vista_datos.column("#0", width=150)
-        self.vista_datos.column("col1", width=150, anchor="center") 
-        self.vista_datos.column("col2", width=150, anchor="center")
-
-            # Titulos a las columnas
-        self.vista_datos.heading("#0", text="Producto", anchor="center")
-        self.vista_datos.heading("col1", text="Precio", anchor="center")
-        self.vista_datos.heading("col2", text="Cantidad", anchor="center")
-
-            # Empaquetar
-        self.vista_datos.pack(expand=True, fill="both")
-
+    def seleccionar_tabla(self, nombre_tabla):
+        self.tabla_seleccionada = nombre_tabla
+        self.buscar_datos()
 
     def buscar_datos(self):
-        almacenamientoDatos = [] # Se guardan los datos
+        for widget in self.frame_tabla.winfo_children():
+            widget.destroy()
+
         try:
-            # Se buscan los datos
             with self.db.connection.cursor() as cursor:
-                cursor.execute("SELECT * FROM productos")
+                cursor.execute(f"SELECT * FROM {self.tabla_seleccionada}")
                 datos = cursor.fetchall()
+                columnas = [desc[0] for desc in cursor.description]
 
-                for i in datos:
-                    almacenamientoDatos.append(i)
+                self.crear_tabla(columnas)
+                self.insertar_datos(datos)
 
-                if datos:
-                    for fila in almacenamientoDatos:
-                        self.vista_datos.insert("",tk.END, text=fila[0], values=(fila[1],fila[1]))
-                else:
-                    self.vista_datos.insert(tk.END, "No se encontraron datos.")
+        except Exception as e:
+            label = ctk.CTkLabel(self.frame_tabla, text=f"Error al obtener datos: {e}", text_color="red")
+            label.pack(pady=20)
 
-        except Exception as ex:
-            self.vista_datos.insert(tk.END, f"Error al buscar datos: {ex}")
-    
-    # Cerrar la aplicación
     def cerrar_aplicacion(self):
-        if self.db: # Si está conectada la base de datos entonces cierra la conexión
+        if self.db:
             self.db.cerrar_conexion()
-        self.master.destroy() # Destruye el master con la interfaz
+        self.master.destroy()

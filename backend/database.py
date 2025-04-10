@@ -9,21 +9,19 @@ class ConexionPostgres:
 
     def conectar(self):
         try:
-            DATABASE_URL = os.getenv("DATABASE_URL")
-            self.connection = psycopg2.connect(DATABASE_URL)
+            DATABASE_URL = os.getenv("DATABASE_URL") # EStablece el url del .env
+            print(os.getenv("DATABASE_URL"))
+            self.connection = psycopg2.connect(DATABASE_URL) # Conexión
             print("✅ Conexión exitosa a Supabase")
         except Exception as ex:
             print(f"❌ Error al conectar: {ex}")
 
-    def cerrar_conexion(self):
+    def cerrar_conexion(self): # Función para cerrar la conexión
         if self.connection:
             self.connection.close()
             print("🔒 Conexión cerrada")
 
     def ejecutar_consulta(self, consulta, parametros=None):
-        """
-        Ejecuta una consulta SQL y devuelve los resultados.
-        """
         try:
             with self.connection.cursor() as cursor:
                 cursor.execute(consulta, parametros)
