@@ -29,3 +29,18 @@ class ConexionPostgres:
         except Exception as ex:
             print(f"❌ Error al ejecutar consulta: {ex}")
             return None
+    
+    def verificar_usuario(self, usuario, contrasena):
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(
+                "SELECT * FROM usuarios WHERE nombre = %s AND password = %s",
+                (usuario, contrasena)
+            )
+            resultado = cursor.fetchone()
+            cursor.close()
+            return resultado is not None
+        except Exception as ex:
+            print(f"❌ Error al verificar usuario: {ex}")
+            return False
+

@@ -5,6 +5,11 @@ from backend.database import ConexionPostgres as psql
 import tkinter.ttk as ttk
 
 rutaImagenLogoSanbirds = os.path.abspath("frontend/assets/LOGOSANBIRDSDB.png")
+rutaIconoAgregar = os.path.abspath("frontend/assets/icon_add.png")
+rutaIconoEditar = os.path.abspath("frontend/assets/icon_edit.png")
+rutaIconoEliminar = os.path.abspath("frontend/assets/icon_delete.png")
+naranja_claro = "#FF914D"  # un poco más claro
+naranja_oscuro = "#CC5C1C"  # un poco más oscuro
 
 class Interfaz(ctk.CTkFrame):
     def __init__(self, master=None, db=None):
@@ -39,13 +44,6 @@ class Interfaz(ctk.CTkFrame):
         self.tree.configure(yscrollcommand=vsb.set)
         vsb.pack(side="right", fill="y")
 
-        botones_frame = ctk.CTkFrame(self.frame_tabla)
-        botones_frame.pack(fill="x", pady=(10, 0))
-
-        ctk.CTkButton(botones_frame, text="Agregar", command=self.abrir_ventana_agregar).pack(side="left", padx=10)
-        ctk.CTkButton(botones_frame, text="Editar", command=self.abrir_ventana_editar).pack(side="left", padx=10)
-        ctk.CTkButton(botones_frame, text="Eliminar", command=self.eliminar_registro).pack(side="left", padx=10)
-
     def insertar_datos(self, datos):
         for fila in datos:
             self.tree.insert("", "end", values=fila)
@@ -54,25 +52,79 @@ class Interfaz(ctk.CTkFrame):
         frame_top = ctk.CTkFrame(self, height=100)
         frame_top.pack(fill="x", padx=10, pady=(10, 0))
 
-        contenedor = ctk.CTkFrame(frame_top)
-        contenedor.pack(pady=15, padx=20, side="left")
+        contenedor_logo = ctk.CTkFrame(frame_top)
+        contenedor_logo.pack(pady=15, padx=20, side="left")
 
-        logo = ctk.CTkImage(Image.open(rutaImagenLogoSanbirds), size=(100, 60))
-        logo_label = ctk.CTkLabel(contenedor, image=logo, text="")
+        logo = ctk.CTkImage(Image.open(rutaImagenLogoSanbirds), size=(250, 120))
+        logo_label = ctk.CTkLabel(contenedor_logo, image=logo, text="")
         logo_label.pack(side="left", padx=10)
 
-        self.boton_buscar = ctk.CTkButton(contenedor, text="Buscar datos", command=self.buscar_datos)
-        self.boton_buscar.pack(side="left", padx=10)
+        contenedor_botones = ctk.CTkFrame(frame_top)
+        contenedor_botones.pack(pady=15, padx=20, side="right")
+
+        icono_add = ctk.CTkImage(Image.open(rutaIconoAgregar), size=(20, 20))
+        icono_edit = ctk.CTkImage(Image.open(rutaIconoEditar), size=(20, 20))
+        icono_delete = ctk.CTkImage(Image.open(rutaIconoEliminar), size=(20, 20))
+
+        self.boton_agregar = ctk.CTkButton(
+            contenedor_botones,
+            text="Agregar",
+            image=icono_add,
+            compound="left",
+            command=self.abrir_ventana_agregar,
+            fg_color=naranja_claro,
+            hover_color=naranja_oscuro
+        )
+
+        self.boton_editar = ctk.CTkButton(
+            contenedor_botones,
+            text="Editar",
+            image=icono_edit,
+            compound="left",
+            command=self.abrir_ventana_editar,
+            fg_color=naranja_claro,
+            hover_color=naranja_oscuro
+        )
+
+        self.boton_eliminar = ctk.CTkButton(
+            contenedor_botones,
+            text="Eliminar",
+            image=icono_delete,
+            compound="left",
+            command=self.eliminar_registro,
+            fg_color=naranja_claro,
+            hover_color=naranja_oscuro
+        )
+
+
+        self.boton_eliminar.pack(side="right", padx=10)
+        self.boton_editar.pack(side="right", padx=10)
+        self.boton_agregar.pack(side="right", padx=10)
 
     def area_resultados(self):
         frame_body = ctk.CTkFrame(self)
         frame_body.pack(expand=True, fill="both", padx=20, pady=10)
 
+        self.frame_busqueda = ctk.CTkFrame(frame_body)
+        self.frame_busqueda.pack(fill="x", pady=(0, 5))
+
+        self.entry_busqueda = ctk.CTkEntry(self.frame_busqueda, placeholder_text="Buscar...")
+        self.entry_busqueda.pack(side="left", padx=(10, 5), fill="x", expand=True)
+
+        self.boton_buscar = ctk.CTkButton(
+            self.frame_busqueda,
+            text="Buscar",
+            fg_color=naranja_claro,
+            hover_color=naranja_oscuro,
+            command=self.buscar_datos
+        )
+        self.boton_buscar.pack(side="right", padx=(5, 10))
+
+
         frame_menu = ctk.CTkFrame(frame_body, width=200)
         frame_menu.pack(side="left", fill="y", padx=(0, 10), pady=10)
 
         self.botones_menu = []
-
         tablas = ["cliente", "envio", "detalles_envio", "productos", "proveedor"]
         for tabla in tablas:
             boton = ctk.CTkButton(
@@ -80,8 +132,11 @@ class Interfaz(ctk.CTkFrame):
                 text=tabla.capitalize().replace("_", " "),
                 width=160,
                 corner_radius=10,
+                fg_color=naranja_claro,
+                hover_color=naranja_oscuro,
                 command=lambda t=tabla: self.seleccionar_tabla(t)
             )
+
             boton.pack(pady=5, padx=10)
             self.botones_menu.append(boton)
 
@@ -96,9 +151,19 @@ class Interfaz(ctk.CTkFrame):
         for widget in self.frame_tabla.winfo_children():
             widget.destroy()
 
+        texto_busqueda = self.entry_busqueda.get().strip()
+
         try:
             with self.db.connection.cursor() as cursor:
-                cursor.execute(f"SELECT * FROM {self.tabla_seleccionada}")
+                if texto_busqueda:
+                    columnas = self.obtener_columnas()
+                    condiciones = " OR ".join([f"{col}::text ILIKE %s" for col in columnas])
+                    query = f"SELECT * FROM {self.tabla_seleccionada} WHERE {condiciones}"
+                    valores = [f"%{texto_busqueda}%"] * len(columnas)
+                    cursor.execute(query, valores)
+                else:
+                    cursor.execute(f"SELECT * FROM {self.tabla_seleccionada}")
+
                 datos = cursor.fetchall()
                 columnas = [desc[0] for desc in cursor.description]
 
@@ -117,6 +182,8 @@ class Interfaz(ctk.CTkFrame):
         if not seleccion:
             return
         datos_seleccionados = self.tree.item(seleccion[0])["values"]
+        if not datos_seleccionados:
+            return
         self.abrir_formulario("Editar", datos_seleccionados)
 
     def abrir_formulario(self, modo, datos=None):
@@ -125,7 +192,6 @@ class Interfaz(ctk.CTkFrame):
         ventana.geometry("400x400")
         ventana.configure(fg_color="#1e1e1e")
 
-        # Centrar ventana
         ventana.update_idletasks()
         ancho = ventana.winfo_width()
         alto = ventana.winfo_height()
@@ -133,7 +199,6 @@ class Interfaz(ctk.CTkFrame):
         y = (ventana.winfo_screenheight() // 2) - (alto // 2)
         ventana.geometry(f"+{x}+{y}")
 
-        # Hacer modal
         ventana.transient(self)
         ventana.grab_set()
         ventana.focus_force()
@@ -165,7 +230,8 @@ class Interfaz(ctk.CTkFrame):
             if modo == "Agregar":
                 self.insertar_en_bd(campos, valores)
             elif modo == "Editar":
-                self.actualizar_en_bd(campos, valores, datos[0])
+                if valores != datos:
+                    self.actualizar_en_bd(campos, valores, datos[0])
             cerrar_formulario()
 
         ctk.CTkButton(ventana, text="Guardar", command=guardar).pack(pady=10)
@@ -225,16 +291,15 @@ class Interfaz(ctk.CTkFrame):
     def deshabilitar_ui(self):
         for boton in self.botones_menu:
             boton.configure(state="disabled")
-        self.boton_buscar.configure(state="disabled")
+        self.boton_agregar.configure(state="disabled")
+        self.boton_editar.configure(state="disabled")
+        self.boton_eliminar.configure(state="disabled")
 
     def habilitar_ui(self):
         for boton in self.botones_menu:
             boton.configure(state="normal")
-        self.boton_buscar.configure(state="normal")
-
-        # Solo configuramos el color si es un widget de CTk
+        self.boton_agregar.configure(state="normal")
+        self.boton_editar.configure(state="normal")
+        self.boton_eliminar.configure(state="normal")
         if isinstance(self.master, ctk.CTk):
             self.master.configure(fg_color="#1e1e1e")
-
-
-
