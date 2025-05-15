@@ -8,12 +8,12 @@ rutaImagenLogoSanbirds = os.path.abspath("frontend/assets/LOGOSANBIRDSDB.png")
 rutaIconoAgregar = os.path.abspath("frontend/assets/icon_add.png")
 rutaIconoEditar = os.path.abspath("frontend/assets/icon_edit.png")
 rutaIconoEliminar = os.path.abspath("frontend/assets/icon_delete.png")
-naranja_claro = "#FF914D"  # un poco más claro
-naranja_oscuro = "#CC5C1C"  # un poco más oscuro
+naranja_claro = "#d07d44"
+naranja_oscuro = "#b4642d"
 
 class Interfaz(ctk.CTkFrame):
     def __init__(self, master=None, db=None):
-        super().__init__(master, fg_color="#1e1e1e")
+        super().__init__(master, fg_color="#C9A28D")
         self.master = master
         self.db = db
         self.pack(expand=True, fill="both")
@@ -21,8 +21,13 @@ class Interfaz(ctk.CTkFrame):
         self.master.geometry("1200x700")
         self.master.protocol("WM_DELETE_WINDOW", self.cerrar_aplicacion)
 
-        ctk.set_appearance_mode("dark")
+        ctk.set_appearance_mode("light")
         ctk.set_default_color_theme("blue")
+
+        # Estilos para la tabla
+        style = ttk.Style()
+        style.configure("Treeview.Heading", font=("Helvetica", 12, "bold"))
+        style.configure("Treeview", font=("Helvetica", 11))
 
         self.tabla_seleccionada = "cliente"
         self.frame_superior()
@@ -35,7 +40,8 @@ class Interfaz(ctk.CTkFrame):
         self.tree = ttk.Treeview(self.frame_tabla, columns=columnas, show="headings")
 
         for col in columnas:
-            self.tree.heading(col, text=col)
+            titulo = col.replace("_", " ").title()
+            self.tree.heading(col, text=titulo)
             self.tree.column(col, anchor="center")
 
         self.tree.pack(expand=True, fill="both", side="left")
@@ -96,7 +102,6 @@ class Interfaz(ctk.CTkFrame):
             hover_color=naranja_oscuro
         )
 
-
         self.boton_eliminar.pack(side="right", padx=10)
         self.boton_editar.pack(side="right", padx=10)
         self.boton_agregar.pack(side="right", padx=10)
@@ -120,7 +125,6 @@ class Interfaz(ctk.CTkFrame):
         )
         self.boton_buscar.pack(side="right", padx=(5, 10))
 
-
         frame_menu = ctk.CTkFrame(frame_body, width=200)
         frame_menu.pack(side="left", fill="y", padx=(0, 10), pady=10)
 
@@ -129,14 +133,13 @@ class Interfaz(ctk.CTkFrame):
         for tabla in tablas:
             boton = ctk.CTkButton(
                 frame_menu,
-                text=tabla.capitalize().replace("_", " "),
+                text=tabla.replace("_", " ").title(),
                 width=160,
                 corner_radius=10,
                 fg_color=naranja_claro,
                 hover_color=naranja_oscuro,
                 command=lambda t=tabla: self.seleccionar_tabla(t)
             )
-
             boton.pack(pady=5, padx=10)
             self.botones_menu.append(boton)
 
@@ -169,7 +172,6 @@ class Interfaz(ctk.CTkFrame):
 
                 self.crear_tabla(columnas)
                 self.insertar_datos(datos)
-
         except Exception as e:
             label = ctk.CTkLabel(self.frame_tabla, text=f"Error al obtener datos: {e}", text_color="red")
             label.pack(pady=20)
@@ -190,7 +192,7 @@ class Interfaz(ctk.CTkFrame):
         ventana = ctk.CTkToplevel(self)
         ventana.title(f"{modo} registro")
         ventana.geometry("400x400")
-        ventana.configure(fg_color="#1e1e1e")
+        ventana.configure(fg_color="#f5f0e6")
 
         ventana.update_idletasks()
         ancho = ventana.winfo_width()

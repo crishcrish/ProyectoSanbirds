@@ -8,6 +8,7 @@ def mostrar_interfaz(root, db):
     app.pack(expand=True, fill="both")  
 
 def main():
+    ctk.set_appearance_mode("light")
     db = ConexionPostgres()
     db.conectar()
 
@@ -15,7 +16,7 @@ def main():
     root.withdraw()
 
     def on_login_success():
-        root.deiconify() 
+        root.deiconify()
         mostrar_interfaz(root, db)
 
     LoginScreen(root, db, on_login_success)

@@ -4,7 +4,8 @@ import os
 
 class LoginScreen(ctk.CTkToplevel):
     def __init__(self, master, db, on_login_success):
-        super().__init__(master)
+        super().__init__(master, fg_color="#C9A28D")
+        
         self.db = db
         self.on_login_success = on_login_success
         self.title("Sanbirds DB")
@@ -17,37 +18,47 @@ class LoginScreen(ctk.CTkToplevel):
         self.grab_set()
 
 
+        # Colores personalizados
+        naranja_claro = "#d07d44"
+        naranja_oscuro = "#b4642d"
+
         # Frame de la izquierda: Imagen
-        self.left_frame = ctk.CTkFrame(self, width=250)
+        self.left_frame = ctk.CTkFrame(self, width=250, fg_color="#C9A28D")
         self.left_frame.pack(side="left", fill="both", expand=False)
 
-        image_path = os.path.join("frontend", "assets", "login_image.png")  # cambia esto por tu imagen real
+        image_path = os.path.join("frontend", "assets", "login_image.png")
         image = ctk.CTkImage(light_image=Image.open(image_path), size=(250, 400))
         self.image_label = ctk.CTkLabel(self.left_frame, image=image, text="")
         self.image_label.pack(fill="both", expand=True)
 
         # Frame de la derecha: Formulario
-        self.right_frame = ctk.CTkFrame(self)
+        self.right_frame = ctk.CTkFrame(self, fg_color="#E5E5E5")
         self.right_frame.pack(side="right", fill="both", expand=True, padx=20, pady=20)
 
-        self.label_user = ctk.CTkLabel(self.right_frame, text="Usuario")
+        self.label_user = ctk.CTkLabel(self.right_frame, text="Usuario", text_color="black")
         self.label_user.pack(pady=10)
         self.entry_user = ctk.CTkEntry(self.right_frame)
         self.entry_user.pack()
 
-        self.label_pass = ctk.CTkLabel(self.right_frame, text="Contraseña")
+        self.label_pass = ctk.CTkLabel(self.right_frame, text="Contraseña", text_color="black")
         self.label_pass.pack(pady=10)
         self.entry_pass = ctk.CTkEntry(self.right_frame, show="*")
         self.entry_pass.pack()
 
-        self.login_button = ctk.CTkButton(self.right_frame, text="Iniciar sesión", command=self.login)
+        self.login_button = ctk.CTkButton(
+            self.right_frame, 
+            text="Iniciar sesión", 
+            command=self.login,
+            fg_color=naranja_claro, 
+            hover_color=naranja_oscuro,
+            text_color="white"
+        )
         self.login_button.pack(pady=20)
+
         self.protocol("WM_DELETE_WINDOW", self.cerrar_aplicacion)
 
     def cerrar_aplicacion(self):
-        self.master.destroy() 
-
-        
+        self.master.destroy()
 
     def login(self):
         usuario = self.entry_user.get()
@@ -57,4 +68,3 @@ class LoginScreen(ctk.CTkToplevel):
             self.on_login_success()
         else:
             ctk.CTkLabel(self.right_frame, text="Usuario o contraseña incorrectos", text_color="red").pack()
-
